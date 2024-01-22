@@ -1,6 +1,10 @@
 #include "game.h"
+
+#include <future>
 #include <iostream>
+
 #include "SDL.h"
+#include "user_data.h"
 
 Game::Game(std::size_t grid_width, std::size_t grid_height)
     : snake(grid_width, grid_height),
@@ -12,12 +16,15 @@ Game::Game(std::size_t grid_width, std::size_t grid_height)
 
 void Game::Run(Controller const &controller, Renderer &renderer,
                std::size_t target_frame_duration) {
+  auto future_data = std::async(std::launch::async, get_users_from_file);
   Uint32 title_timestamp = SDL_GetTicks();
   Uint32 frame_start;
   Uint32 frame_end;
   Uint32 frame_duration;
   int frame_count = 0;
-  bool running = true;
+  auto data = future_data.get();
+  const int selected_index = setup_user(controller, renderer, data);
+  bool running = selected_index > 0;
 
   while (running) {
     frame_start = SDL_GetTicks();
@@ -48,6 +55,8 @@ void Game::Run(Controller const &controller, Renderer &renderer,
       SDL_Delay(target_frame_duration - frame_duration);
     }
   }
+
+  write_data_to_file(selected_index, data, GetScore());
 }
 
 void Game::PlaceFood() {

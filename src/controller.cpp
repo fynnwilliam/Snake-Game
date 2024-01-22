@@ -1,5 +1,10 @@
 #include "controller.h"
+
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
+
 #include <iostream>
+
 #include "SDL.h"
 #include "snake.h"
 
@@ -35,6 +40,55 @@ void Controller::HandleInput(bool &running, Snake &snake) const {
           ChangeDirection(snake, Snake::Direction::kRight,
                           Snake::Direction::kLeft);
           break;
+      }
+    }
+  }
+}
+
+void Controller::HandleInput(int &key) const noexcept {
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_QUIT) {
+      key = 4;
+    } else if (event.type == SDL_KEYDOWN) {
+      switch (event.key.keysym.sym) {
+        case SDLK_UP:
+          key = -1;
+          break;
+        case SDLK_DOWN:
+          key = 1;
+          break;
+        case SDLK_RETURN:
+          key = 2;
+          break;
+        default:
+          key = 0;
+          break;
+      }
+    } else {
+      key = 0;
+    }
+  }
+}
+
+void Controller::HandleInput(bool &running,
+                             std::string &user_input) const noexcept {
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_QUIT) {
+      running = false;
+      user_input.clear();
+    } else if (event.type == SDL_KEYDOWN) {
+      auto size = user_input.size();
+      if (const int ch = event.key.keysym.sym; ch >= SDLK_a && ch <= SDLK_z)
+        user_input += (char)ch;
+      else if (ch == SDLK_RETURN)
+        running = size == 0;
+      else if (ch == SDLK_BACKSPACE && size > 0)
+        user_input.resize(--size);
+      else if (ch == SDLK_ESCAPE) {
+        running = false;
+        user_input = "esc";
       }
     }
   }
